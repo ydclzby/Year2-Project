@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>ESP32 Data Receiver</title>
-    <script src="script.js"></script>
-  </head>
-  <body>
-    <h1>ESP32 Data Receiver</h1>
-    <button id="fetch-button">Fetch Data</button>
-  </body>
+<head>
+  <title>Receive Data from ESP32</title>
+</head>
+<body>
+  <h1>Data Received from ESP32:</h1>
+  <div id="dataContainer"></div>
+
+  <script>
+    const dataContainer = document.getElementById('dataContainer');
+    const socket = new WebSocket('ws://localhost:3000');
+
+    socket.addEventListener('message', (event) => {
+      const receivedData = event.data;
+      console.log('Received data on web:', receivedData);
+      // Display the received data in the web application
+      dataContainer.textContent = receivedData;
+    });
+  </script>
+</body>
 </html>
