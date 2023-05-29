@@ -7,8 +7,8 @@ import pygame
 to_be_selected = []                                                      # keeps track of nodes that are candidates for connecting in the maze
 random_selectB = []                                                      # stores the available neigbours of a selected node
 path_list = []                                                           # keeps track of the path taken in the maze generation process
-ROWS = 10
-COLUMNS = 10                                                              # dimensions of maze
+ROWS = 100
+COLUMNS = 100                                                              # dimensions of maze
 x = [0, 2, 0, -2]
 y = [2, 0, -2, 0]
 px = [0, 1, 0, -1]
