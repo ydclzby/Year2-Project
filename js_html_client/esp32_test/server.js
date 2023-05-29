@@ -1,36 +1,35 @@
 const express = require('express');
-const WebSocket = require('ws');
 const app = express();
 const port = 3000;
+
+// Middleware to parse JSON requests
+app.use(express.json());
+
+// In-memory variable to store the latest received data
+let receivedData = null;
 
 // Serve the HTML file
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-// Create a WebSocket server
-const wss = new WebSocket.Server({ noServer: true });
-
-// Handle WebSocket connections
-wss.on('connection', (ws) => {
-  ws.on('message', (data) => {
-    console.log('Received data from ESP32:', data);
-    // Send the data to all connected clients
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
-  });
+// GET endpoint to retrieve the latest received data
+app.get('/esp32data', (req, res) => {
+  res.json({ data: receivedData });
 });
 
-// Upgrade HTTP requests to WebSocket
-app.server = app.listen(port, () => {
+// POST endpoint to receive data from ESP32
+app.post('/esp32data', (req, res) => {
+  const newData = req.body.data;
+  console.log('Data received from ESP32:', newData);
+
+  // Store the latest received data
+  receivedData = newData;
+
+  res.send('Data received successfully');
+});
+
+// Start the server
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-});
-
-app.server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
 });
