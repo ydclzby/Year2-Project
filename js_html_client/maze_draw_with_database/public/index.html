@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maze Explorer</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <button id="drawButton">Draw Maze</button>
+  </div>
+  <br>
+  <canvas id="mazeCanvas" width="400" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("mazeCanvas");
+    const ctx = canvas.getContext("2d");
+
+    document.getElementById("drawButton").addEventListener("click", () => {
+      fetchMazeMatrix();
+    });
+
+    function fetchMazeMatrix() {
+      fetch('/maze')
+        .then(response => response.json())
+        .then(mazeMatrix => {
+          drawMaze(mazeMatrix);
+        })
+        .catch(error => {
+          console.error('Error fetching maze matrix:', error);
+        });
+    }
+
+    function drawMaze(mazeMatrix) {
+  canvas.width = canvas.width; // Clear the canvas
+
+  // Size of each cell in the maze
+  const cellSize = canvas.width / mazeMatrix[0].length;
+
+  // Set the line width for the walls
+  ctx.lineWidth = 1;
+
+  // Draw the maze
+  for (let i = 0; i < mazeMatrix.length; i++) {
+    for (let j = 0; j < mazeMatrix[i].length; j++) {
+      const cellValue = mazeMatrix[i][j];
+
+      // Set the cell color based on the value in the matrix
+      ctx.fillStyle = cellValue === 1 ? "black" : "white";
+
+      // Draw a rectangle for each cell
+      ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+
+      // Draw lines for walls (if cellValue is 1)
+      if (cellValue === 1) {
+        ctx.strokeStyle = "white"; // Color of the wall lines
+        ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+}
+
+  </script>
+</body>
+</html>
