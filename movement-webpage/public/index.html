@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rover Control</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    .slider-container {
+      margin-top: 20px;
+    }
+
+    .slider-label {
+      margin-bottom: 5px;
+    }
+
+    .text-input {
+      width: 60px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rover Control</h1>
+
+  <div class="controls">
+    <div class="button-group">
+      <button class="button" id="forwardButton">Forward (W)</button>
+      <button class="button" id="leftButton">Left (A)</button>
+      <button class="button" id="stopButton">Stop (S)</button>
+      <button class="button" id="rightButton">Right (D)</button>
+    </div>
+
+    <div class="state-display">
+      <h3>State: <span id="stateLabel">Stop</span></h3>
+    </div>
+
+    <div class="slider-container">
+      <label class="slider-label">Kp:</label>
+      <input class="text-input" id="kpInput" type="text">
+      <input class="slider" id="kpSlider" type="range" min="0" max="1000">
+    </div>
+
+    <div class="slider-container">
+      <label class="slider-label">Kd:</label>
+      <input class="text-input" id="kdInput" type="text">
+      <input class="slider" id="kdSlider" type="range" min="0" max="100">
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const forwardButton = document.getElementById('forwardButton');
+      const leftButton = document.getElementById('leftButton');
+      const stopButton = document.getElementById('stopButton');
+      const rightButton = document.getElementById('rightButton');
+      const stateLabel = document.getElementById('stateLabel');
+      const kpInput = document.getElementById('kpInput');
+      const kpSlider = document.getElementById('kpSlider');
+      const kdInput = document.getElementById('kdInput');
+      const kdSlider = document.getElementById('kdSlider');
+
+      forwardButton.addEventListener('click', function() {
+        sendState('FORWARD');
+      });
+
+      leftButton.addEventListener('click', function() {
+        sendState('LEFT');
+      });
+
+      stopButton.addEventListener('click', function() {
+        sendState('STOP');
+      });
+
+      rightButton.addEventListener('click', function() {
+        sendState('RIGHT');
+      });
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'w') {
+          sendState('FORWARD');
+        } else if (event.key === 'a') {
+          sendState('LEFT');
+        } else if (event.key === 's') {
+          sendState('STOP');
+        } else if (event.key === 'd') {
+          sendState('RIGHT');
+        }
+      });
+
+      kpSlider.addEventListener('input', function() {
+        updateKp();
+      });
+
+      kdSlider.addEventListener('input', function() {
+        updateKd();
+      });
+
+      kpInput.addEventListener('change', function() {
+        updateKp();
+      });
+
+      kdInput.addEventListener('change', function() {
+        updateKd();
+      });
+
+      function sendState(state) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/control', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            console.log('Rover state updated successfully');
+            stateLabel.textContent = state;
+          } else {
+            console.error('Error updating rover state');
+          }
+        };
+        xhr.send(JSON.stringify({ state: state }));
+      }
+
+      function updateKp() {
+        const kp = parseFloat(kpSlider.value);
+        kpInput.value = kp.toFixed(1);
+        // Send the updated Kp value to the server
+        sendKpKd(kp, parseFloat(kdSlider.value));
+      }
+
+      function updateKd() {
+        const kd = parseFloat(kdSlider.value);
+        kdInput.value = kd.toFixed(1);
+        // Send the updated Kd value to the server
+        sendKpKd(parseFloat(kpSlider.value), kd);
+      }
+
+      function sendKpKd(kp, kd) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/adjust', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            console.log('Kp and Kd values updated successfully');
+          } else {
+            console.error('Error updating Kp and Kd values');
+          }
+        };
+        xhr.send(JSON.stringify({ kp: kp, kd: kd }));
+      }
+    });
+  </script>
+</body>
+</html>
