@@ -1,4 +1,4 @@
-module EEE_IMGPROC(
+  module EEE_IMGPROC(
 	// global clock & reset
 	clk,
 	reset_n,
@@ -109,29 +109,37 @@ end
   
   
 // Define HSV color ranges
-parameter [7:0] RED_HUE_MIN = 0;       // Example range for red hue
+parameter [7:0] RED_HUE_MIN = 0;       // range for red hue
 parameter [7:0] RED_HUE_MAX = 25;
-parameter [7:0] BLUE_HUE_MIN = 220;    // Example range for blue hue
+parameter [7:0] BLUE_HUE_MIN = 220;    // range for blue hue
 parameter [7:0] BLUE_HUE_MAX = 250;
-parameter [7:0] YELLOW_HUE_MIN = 30;   // Example range for yellow hue
+parameter [7:0] YELLOW_HUE_MIN = 30;   // range for yellow hue
 parameter [7:0] YELLOW_HUE_MAX = 60;
-parameter [7:0] SATURATION_MIN = 160;  // Example range for saturation
-parameter [7:0] VALUE_MIN = 128;       // Example range for value
+parameter [7:0] SATURATION_MIN = 160;  // range for saturation
+parameter [7:0] VALUE_MIN = 128;       // range for value
 
 // Detect red areas
-assign red_detect = (hue >= RED_HUE_MIN) & (hue <= RED_HUE_MAX) & (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
+assign red_detect = (hue >= RED_HUE_MIN) & (hue <= RED_HUE_MAX) & 
+                    (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
    
 // Detect blue areas
-assign blue_detect = (hue >= BLUE_HUE_MIN) & (hue <= BLUE_HUE_MAX) & (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
+assign blue_detect = (hue >= BLUE_HUE_MIN) & (hue <= BLUE_HUE_MAX) & 
+                     (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
   
 // Detect yellow areas
-assign yellow_detect = (hue >= YELLOW_HUE_MIN) & (hue <= YELLOW_HUE_MAX) & (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
+assign yellow_detect = (hue >= YELLOW_HUE_MIN) & (hue <= YELLOW_HUE_MAX) & 
+                       (saturation >= SATURATION_MIN) & (value >= VALUE_MIN);
 
 // Detect white areas using RGB
 parameter [7:0] WHITE_MIN = 8'hFE, WHITE_MAX = 8'hFF;
-assign white_detect = (red >= WHITE_MIN) & (red <= WHITE_MAX) & (green >= WHITE_MIN) & (green <= WHITE_MAX) & (blue >= WHITE_MIN) & (blue <= WHITE_MAX) & (saturation <= 40);
+assign white_detect = (red >= WHITE_MIN) & (red <= WHITE_MAX) & 
+                      (green >= WHITE_MIN) & (green <= WHITE_MAX) & 
+							 (blue >= WHITE_MIN) & (blue <= WHITE_MAX) & 
+							 (saturation <= 40); // white saturation is set to ensure no coincide of color detection of red/yellow/blue color
 
-// Highlight detected areas of its red yellow or blue color
+
+// Highlight detected areas of its red yellow blue or white color
+// keep others grey
 wire [23:0] highlight;
 assign grey = green[7:1] + red[7:2] + blue[7:2]; //Grey = green/2 + red/4 + blue/4
 assign highlight =(red_detect) ? {8'hff, 8'h00, 8'h00} :
@@ -177,12 +185,12 @@ always@(posedge clk) begin
 end
 
 
-// add counter for counting whether there is enough pixels of a color to trigger the bounding box 
-// detected is 1 when there is a red, yellow, blue or white pixel detected
+// adder counter for counting whether there is enough pixels of a color to trigger the bounding box 
+// detection is active when there is a red, yellow, blue or white pixel detected
 // define counters to count the number of colored pixel
 // all counter values reset every 16 pixels
-wire detected; 
-assign detected = red_detect | yellow_detect | blue_detect | white_detect;
+wire detection; 
+assign detection = red_detect | yellow_detect | blue_detect | white_detect;
 reg [3:0] c_counter, r_counter, b_counter, y_counter, w_counter, counter;
 always@(posedge clk) begin
   c_counter <= c_counter + 4'b1;
@@ -190,7 +198,7 @@ always@(posedge clk) begin
   if (yellow_detect & !white_detect) y_counter <= y_counter + 4'b1;
   if (blue_detect & !white_detect) b_counter <= b_counter + 4'b1;
   if (white_detect) w_counter <= w_counter + 4'b1;
-  if (detected) counter <= counter + 4'b1;
+  if (detection) counter <= counter + 4'b1;
   if (c_counter == 4'b0) begin
       r_counter <= 4'b0;
 		y_counter <= 4'b0;
@@ -204,7 +212,9 @@ end
 reg [10:0] x_rmin, y_rmin, x_rmax, y_rmax;
 always@(posedge clk) begin
 	//Update bounds when there is enough red pixels in 16 pixels
-	if (red_detect & !white_detect & in_valid & (r_counter > 4'hc | ((4'hf - counter > 4'h8)&r_counter > 4'h5))) begin
+	if (red_detect & !white_detect & in_valid & 
+	   (r_counter > 4'hc | ((4'hf - counter > 4'h8) & 
+		r_counter > 4'h5))) begin
 		if (x < x_rmin) x_rmin <= x;
 		if (x > x_rmax) x_rmax <= x;
 		if (y < y_rmin) y_rmin <= y;
@@ -221,7 +231,9 @@ end
 //Find first and last blue pixels
 reg [10:0] x_bmin, y_bmin, x_bmax, y_bmax;
 always@(posedge clk) begin
-	if (blue_detect & !white_detect & in_valid & (b_counter > 4'hc | ((4'hf - counter > 4'h8)&b_counter > 4'h5))) begin	//Update bounds when the pixel is blue
+	if (blue_detect & !white_detect & in_valid & 
+	   (b_counter > 4'hc | ((4'hf - counter > 4'h8) & 
+		b_counter > 4'h5))) begin	//Update bounds when the pixel is blue
 		if (x < x_bmin) x_bmin <= x;
 		if (x > x_bmax) x_bmax <= x;
 		if (y < y_bmin) y_bmin <= y;
@@ -238,7 +250,9 @@ end
 //Find first and last yellow pixels
 reg [10:0] x_ymin, y_ymin, x_ymax, y_ymax;
 always@(posedge clk) begin
-	if (yellow_detect & !white_detect & in_valid & (y_counter > 4'hc | ((4'hf - counter > 4'h8)&y_counter > 4'h5))) begin //Update bounds when the pixel is yellow
+	if (yellow_detect & !white_detect & in_valid & 
+	(y_counter > 4'hc | ((4'hf - counter > 4'h8) & 
+	y_counter > 4'h5))) begin //Update bounds when the pixel is yellow
 		if (x < x_ymin) x_ymin <= x;
 		if (x > x_ymax) x_ymax <= x;
 		if (y < y_ymin) y_ymin <= y;
@@ -255,10 +269,11 @@ end
 //Find if there is a white wall in front of the rover
 reg white_wall_infront;
 always@(posedge clk) begin
-   //Update bounds when there is enough white pixels in 16 pixels
-   if (white_detect & in_valid & (w_counter > 4'hc | ((4'hf - counter > 4'h8)&w_counter > 4'h5)))begin	//Update bounds when the pixel is white
+   //Update white_wall_infront when there is enough white pixels in 16 pixels
+   if (white_detect & in_valid & (w_counter > 4'hc | 
+	   ((4'hf - counter > 4'h8) & w_counter > 4'h5)))begin	//Update bounds when the pixel is white
       // white_wall_infront is 1 when there is a pixel in front of the rover in a certain area
-		if (y < 11'd480 && y > 11'd300 && x < 11'd430 && x > 11'd210) white_wall_infront = 1'b1;
+		if (y < 11'd480 && y > 11'd347 && x < 11'd488 && x > 11'd152) white_wall_infront = 1'b1;
 	end
 	if (sop & in_valid) begin	//Reset white_wall_infront on start of packet
       white_wall_infront = 1'b0;
@@ -301,6 +316,7 @@ always@(posedge clk) begin
 	end
 	
 	//Cycle through message writer states once started
+	//only three states work, so msg_state jumps 2 states when current state is 2'b10
 	if (msg_state != 2'b00) begin
 	  if (msg_state == 2'b10) msg_state <= msg_state + 2'b10;
 	  else msg_state <= msg_state + 2'b01;
