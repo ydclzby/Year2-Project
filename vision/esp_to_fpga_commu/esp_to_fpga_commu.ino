@@ -11,6 +11,7 @@ HardwareSerial Fpga(2);
 unsigned long start = 0;
 unsigned long period = 500;
 
+// Function to convert a byte array to an integer
 int byte2int(byte* buf, int size){
   int val = 0;
   for (int i=(size-1); i>=0; i--){
@@ -37,13 +38,15 @@ void loop() {
   if (Fpga.available() >= 4) {
     byte buf[4];
     Fpga.readBytes(buf, 4);
-
+    
+    // Print "Received data: " when newline is printed
     if (newLine) {
       Serial.print("Received data: ");
       newLine = false;
     }
     int a = byte2int(buf, 4);
     
+    // Check the received value and print corresponding message
     if(a == 0x00524242){
       Serial.print("red ");
     } 
@@ -60,7 +63,8 @@ void loop() {
       Serial.print(a, HEX);
       Serial.print(" ");
     } 
-
+    
+    // counter of 8 to make the received data occur one time in a line and then print 8 messages
     counter++;
     if (counter == 8) {
       Serial.println();
