@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 app.get('/maze', async (req, res) => {
   try {
     const conn = await pool.getConnection();
-    const rows = await conn.query('SELECT matrix FROM maze_table WHERE id = 1'); // Assuming maze_table has a single row for the maze
+    const rows = await conn.query('SELECT matrix FROM maze_table WHERE id = (SELECT MAX(id) FROM maze_table)'); // Assuming maze_table has a single row for the maze
     conn.release();
     
     const mazeMatrix = JSON.parse(rows[0].matrix);

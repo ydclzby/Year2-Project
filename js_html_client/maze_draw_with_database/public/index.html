@@ -11,22 +11,30 @@
 <body>
   <div>
     <button id="drawButton">Draw Maze</button>
+    <button id="findPathButton">Find Shortest Path</button>
   </div>
   <br>
-  <canvas id="mazeCanvas" width="1000" height="400"></canvas>
+  <canvas id="mazeCanvas" width="1500" height="1000"></canvas>
 
   <script>
     const canvas = document.getElementById("mazeCanvas");
     const ctx = canvas.getContext("2d");
 
+    let mazeMatrix; // Variable to store the maze matrix
+
     document.getElementById("drawButton").addEventListener("click", () => {
       fetchMazeMatrix();
+    });
+
+    document.getElementById("findPathButton").addEventListener("click", () => {
+      findShortestPath();
     });
 
     function fetchMazeMatrix() {
       fetch('/maze')
         .then(response => response.json())
-        .then(mazeMatrix => {
+        .then(matrix => {
+          mazeMatrix = matrix;
           drawMaze(mazeMatrix);
         })
         .catch(error => {
@@ -34,35 +42,166 @@
         });
     }
 
-    function drawMaze(mazeMatrix) {
-  canvas.width = canvas.width; // Clear the canvas
+    function drawMaze(matrix) {
+      canvas.width = canvas.width; // Clear the canvas
+      const cellSize = canvas.width / matrix[0].length;
+      ctx.lineWidth = 1;
 
-  // Size of each cell in the maze
-  const cellSize = canvas.width / mazeMatrix[0].length;
-
-  // Set the line width for the walls
-  ctx.lineWidth = 1;
-
-  // Draw the maze
-  for (let i = 0; i < mazeMatrix.length; i++) {
-    for (let j = 0; j < mazeMatrix[i].length; j++) {
-      const cellValue = mazeMatrix[i][j];
-
-      // Set the cell color based on the value in the matrix
-      ctx.fillStyle = cellValue === 1 ? "black" : "white";
-
-      // Draw a rectangle for each cell
-      ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
-
-      // Draw lines for walls (if cellValue is 1)
-      if (cellValue === 1) {
-        ctx.strokeStyle = "white"; // Color of the wall lines
-        ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+      for (let i = 0; i < matrix.length; i++) {
+        for (let j = 0; j < matrix[i].length; j++) {
+          const cellValue = matrix[i][j];
+          ctx.fillStyle = cellValue === 1 ? "black" : "white";
+          ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+          if (cellValue === 1) {
+            ctx.strokeStyle = "white";
+            ctx.strokeRect(j * cellSize, i * cellSize, cellSize, cellSize);
+          }
+        }
       }
     }
-  }
-}
 
+    function findStartPoint() {
+      for (let row = 0; row < mazeMatrix.length; row++) {
+        for (let col = mazeMatrix[row].length - 1; col >= 0; col--) {
+          if (mazeMatrix[row][col] === 0) {
+            return { row, col };
+          }
+        }
+      }
+      return null;
+    }
+
+    function findEndPoint() {
+      for (let row = mazeMatrix.length - 1; row >= 0; row--) {
+        for (let col = 0; col < mazeMatrix[row].length; col++) {
+          if (mazeMatrix[row][col] === 0) {
+            return { row, col };
+          }
+        }
+      }
+      return null;
+    }
+
+    function calculateHeuristic(node, target) {
+      return Math.sqrt(Math.pow(node.row - target.row, 2) + Math.pow(node.col - target.col, 2));
+    }
+
+    function findShortestPath() {
+      const startPoint = findStartPoint();
+      const endPoint = findEndPoint();
+
+      // Create a priority queue for open nodes
+      const openNodes = new PriorityQueue();
+      openNodes.enqueue(startPoint, 0);
+
+      // Create a map to store the cost from start to each node
+      const costMap = new Map();
+      costMap.set(`${startPoint.row},${startPoint.col}`, 0);
+
+      // Create a map to store the previous node for each node
+      const previousMap = new Map();
+      previousMap.set(`${startPoint.row},${startPoint.col}`, null);
+
+      while (!openNodes.isEmpty()) {
+        const current = openNodes.dequeue().element;
+
+        if (current.row === endPoint.row && current.col === endPoint.col) {
+          const path = reconstructPath(previousMap, endPoint);
+          drawPath(path);
+          return;
+        }
+
+        const adjacentCells = [
+          { row: current.row - 1, col: current.col },
+          { row: current.row - 1, col: current.col + 1 },
+          { row: current.row, col: current.col + 1 },
+          { row: current.row + 1, col: current.col + 1 },
+          { row: current.row + 1, col: current.col },
+          { row: current.row + 1, col: current.col - 1 },
+          { row: current.row, col: current.col - 1 },
+          { row: current.row - 1, col: current.col - 1 },
+        ];
+
+        for (const adjacentCell of adjacentCells) {
+          const { row, col } = adjacentCell;
+          const cost = costMap.get(`${current.row},${current.col}`) + 1;
+
+          if (
+            row >= 0 &&
+            col >= 0 &&
+            row < mazeMatrix.length &&
+            col < mazeMatrix[0].length &&
+            mazeMatrix[row][col] !== 1 &&
+            (!costMap.has(`${row},${col}`) || cost < costMap.get(`${row},${col}`))
+          ) {
+            const heuristic = calculateHeuristic(adjacentCell, endPoint);
+            const priority = cost + heuristic;
+
+            openNodes.enqueue(adjacentCell, priority);
+            costMap.set(`${row},${col}`, cost);
+            previousMap.set(`${row},${col}`, current);
+          }
+        }
+      }
+
+      console.log("No path found!");
+    }
+
+    function reconstructPath(previousMap, endNode) {
+      const path = [];
+      let current = endNode;
+
+      while (current !== null) {
+        path.unshift(current);
+        current = previousMap.get(`${current.row},${current.col}`);
+      }
+
+      return path;
+    }
+
+    function drawPath(path) {
+      const cellSize = canvas.width / mazeMatrix[0].length;
+
+      for (const cell of path) {
+        ctx.fillStyle = "green";
+        ctx.fillRect(cell.col * cellSize, cell.row * cellSize, cellSize, cellSize);
+      }
+    }
+
+    // Priority Queue implementation
+    class PriorityQueue {
+      constructor() {
+        this.elements = [];
+      }
+
+      isEmpty() {
+        return this.elements.length === 0;
+      }
+
+      enqueue(element, priority) {
+        const item = { element, priority };
+        let added = false;
+
+        for (let i = 0; i < this.elements.length; i++) {
+          if (item.priority < this.elements[i].priority) {
+            this.elements.splice(i, 0, item);
+            added = true;
+            break;
+          }
+        }
+
+        if (!added) {
+          this.elements.push(item);
+        }
+      }
+
+      dequeue() {
+        if (this.isEmpty()) {
+          return null;
+        }
+        return this.elements.shift();
+      }
+    }
   </script>
 </body>
 </html>

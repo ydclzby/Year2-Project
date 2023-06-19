@@ -23,10 +23,10 @@ def maze_to_matrix(image_path, target_size):
     return maze_matrix
 
 # Path to the maze image file
-image_path = "/Users/zhangboyan/Year2-Project/maze/WechatIMG6761.png"
+image_path = "/Users/zhangboyan/Desktop/2.png"
 
 # Target size for resizing (e.g., (width, height))
-target_size = (1000, 1000)
+target_size = (150,100)
 
 # Convert the maze image to a resized matrix
 maze_matrix = maze_to_matrix(image_path, target_size)
