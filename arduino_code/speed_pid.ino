@@ -18,6 +18,8 @@
 #define ki 0
 #define kd 4
 
+#define ULTRA_TOR 10
+
 
 double AngleY;
 double AngleZ;
@@ -78,6 +80,8 @@ void mpu_reading()
   mpu6050.update();
   AngleY = mpu6050.getAngleY();
   AngleZ = mpu6050.getAngleZ();
+  ultra_read_r();
+  ultra_read_l();
 }
 
 void Stop(){
@@ -166,6 +170,46 @@ void loop()
 {
   Stop();
   //Forward();
-  ultra_read_r();
-  ultra_read_l();
+
+}
+
+bool haveRightTurned = false;
+
+void wallFollower()
+{
+  Forward();
+  if(!rightHasWall() && !haveRightTurned)
+  {
+    haveRightTurned = true;
+    Right();
+  }
+  if(rightHasWall())
+  {
+    haveRightTurned = false;
+  }
+
+}
+
+bool leftHasWall()
+{
+  if(lcm < ULTRA_TOR)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool rightHasWall()
+{
+  if(rcm < ULTRA_TOR)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
