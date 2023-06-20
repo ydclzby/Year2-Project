@@ -15,7 +15,7 @@ float u0i,u1i,delta_ui,e0i,e1i,e2i; // Internal values for the current controlle
 float uv_max=4, uv_min=0; //anti-windup limitation
 float ui_max=50, ui_min=0; //anti-windup limitation
 float current_limit;
-float dv, di, dp;
+float dv, di, dp; //difference in voltage, current and power
 float vb2, iL2;
 boolean Boost_mode = 0;
 boolean CL_mode = 0;
@@ -63,18 +63,18 @@ void setup() {
     CL_mode = digitalRead(3); // input from the OL_CL switch
     Boost_mode = digitalRead(2); // input from the Buck_Boost switch
 
-if (Boost_mode) {
+if (Boost_mode) { //closed-loop boost
   if (CL_mode) {
     current_limit = 2;
     dv = vb - vb2;
     di = iL - iL2;
     dp = vb * iL - vb2 * iL2;
     closed_loop = MAXppt(dv, di, dp);
-    closed_loop = saturation(closed_loop, 0.99, 0.05);
+    closed_loop = saturation(closed_loop, 0.99, 0.05); //duty cycle limit is reduced
     pwm_modulate(closed_loop);
     vb2 = vb;
     iL2 = iL;
-  } else {
+  } else { //open loop boost
    current_limit = 2;
    oc = iL - current_limit;
    if(oc > 0){
@@ -180,13 +180,13 @@ float MAXppt (float dv, float di, float dp){
   float MpptDuty;
 
   if (dp == 0){
-    MpptDuty = MpptDuty;
+    MpptDuty = MpptDuty; //no difference in  power=>no need MPPT
   }
   else if (dp * dv > 0){
-    MpptDuty = MpptDuty + 0.01;
+    MpptDuty = MpptDuty + 0.01; //positive slope, decrease duty cycle to increase vin, duty cycle is inverted in this case
   }
   else{
-    MpptDuty = MpptDuty - 0.01;
+    MpptDuty = MpptDuty - 0.01; //negative slope, increase duty cycle to decrease vin, duty cycle is inverted in this case
   }
   return MpptDuty;
 }
