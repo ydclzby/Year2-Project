@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="EEE_IMGPROC_MSG" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="EEE_IMGPROC_MSG"/>
+			<item value="word"/>
+			<item value="printf"/>
+			<item value="out"/>
+			<item value="public"/>
+			<item value="0x3508"/>
+		</list>
+		<list key="replacehistory">
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="397" key="DIALOG_WIDTH"/>
+		<item value="1|Microsoft YaHei UI|9.113924|0|WINDOWS|1|-20|0|0|0|400|0|0|0|1|0|0|0|0|Microsoft YaHei UI" key="DIALOG_FONT_NAME"/>
+		<item value="542" key="DIALOG_HEIGHT"/>
+		<item value="378" key="DIALOG_X_ORIGIN"/>
+		<item value="126" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>
