@@ -78,58 +78,22 @@ wire         sop, eop, in_valid, out_ready;
 
 // Detection variable and HSV value define
 wire red_detect, green_detect, white_detect, yellow_detect, blue_detect;
-reg [7:0] hue, saturation, value;
-reg [7:0] max_val;
-reg [7:0] min_val;
-reg [7:0] delta;
-
-
-// hsv translation  
-always @(*) begin
-  max_val = (red > green) ? ((red > blue) ? red : blue) : ((green > blue) ? green : blue);
-  min_val = (red < green) ? ((red < blue) ? red : blue) : ((green < blue) ? green : blue);
-  delta = max_val - min_val;
-  if (delta == 0) begin
-      hue = 0;
-  end else if (max_val == red) begin
-      hue = ((green < blue) ? (green - blue + 256) : (green - blue)) * 43 / delta;
-  end else if (max_val == green) begin
-      hue = ((blue < red ? (blue - red + 256) : (blue - red)) * 43 / delta) + 85;
-  end else begin
-      hue = ((red < green ? (red - green + 256) : (red - green)) * 43 / delta) + 171;
-  end
-// Compute saturation
-   if (max_val != 0)
-     saturation = (delta * 255) / max_val;
-   else
-     saturation = 0;
-// Compute value
-   value = max_val;
-end
-  
-  
-// Define HSV color ranges
-parameter [7:0] RED_HUE_MIN = 0;       // Example range for red hue
-parameter [7:0] RED_HUE_MAX = 25;
-parameter [7:0] BLUE_HUE_MIN = 220;    // Example range for blue hue
-parameter [7:0] BLUE_HUE_MAX = 250;
-parameter [7:0] YELLOW_HUE_MIN = 30;   // Example range for yellow hue
-parameter [7:0] YELLOW_HUE_MAX = 60;
-parameter [7:0] SATURATION_MIN = 160;  // Example range for saturation
-parameter [7:0] VALUE_MIN = 128;       // Example range for value
 
 // Detect red areas
-assign red_detect = (hue <= 8'd13) & (saturation >= 8'd120) & (value >= 8'd70);
-   
-// Detect blue areas
-assign blue_detect = (hue >= 8'd140) & (hue <= 8'd240) & (saturation >= 8'd90) & (value >= 8'd50);
-  
-// Detect yellow areas
-assign yellow_detect = (hue >= 8'd13) & (hue <= 8'd35) & (saturation >= 8'd110) & (value >= 8'd50);
+wire red_detect, yellow_detect, white_detect, yellow_detect, blue_detect;
+// Define color ranges
+parameter [7:0] RED_MIN = 8'hF0, RED_MAX = 8'hFF;
+//parameter [7:0] yellow_MIN = 8'hB0, yellow_MAX = 8'hFF;
+parameter [7:0] BLUE_MIN = 8'hF0, BLUE_MAX = 8'hFF;
+parameter [7:0] YELLOW_MIN = 8'hF0, YELLOW_MAX = 8'hFF;
+parameter [7:0] WHITE_MIN = 8'hA0, WHITE_MAX = 8'hFF;
+parameter [7:0] MIN = 8'h80;
 
-// Detect white areas using RGB
-parameter [7:0] WHITE_MIN = 8'hFE, WHITE_MAX = 8'hFF;
-assign white_detect = (red >= 8'd30) & (red <= 8'd150) & (green >= 8'd40) & (green <= 8'd210) & (blue >= 8'd30) & (blue <= 8'd110) & (saturation <= 40);
+// Detect red areas
+assign red_detect = (red >= RED_MIN) & (red <= RED_MAX) & (green < MIN) & (blue < MIN);
+//assign yellow_detect = (yellow >= yellow_MIN) & (yellow <= yellow_MAX) & (red < yellow_MIN) & (blue < yellow_MIN);
+assign blue_detect = (blue >= BLUE_MIN) & (blue <= BLUE_MAX) & (red < MIN) & (green < MIN);
+assign yellow_detect = (red >= YELLOW_MIN) & (red <= YELLOW_MAX) & (green >= YELLOW_MIN) & (green <= YELLOW_MAX) & (blue < MIN);
 
 // Highlight detected areas of its red yellow or blue color
 wire [23:0] highlight;
